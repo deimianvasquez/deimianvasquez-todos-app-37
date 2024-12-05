@@ -1,19 +1,44 @@
 from flask_sqlalchemy import SQLAlchemy
+from enum import Enum
 
 db = SQLAlchemy()
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+# enum --> enumciado
+class Genders(Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
 
-    def __repr__(self):
-        return '<User %r>' % self.username
+
+class User(db.Model):
+    __tablename__ = "user"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    gender = db.Column(db.Enum(Genders), nullable=False)
+
+    todos = db.relationship("Todos", back_populates="user", cascade="all, delete", uselist=True)
+
 
     def serialize(self):
         return {
             "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
+            "name": self.name,
+            "todos": list(map(lambda item: item.serialize(), self.todos))
+        }
+
+
+class Todos(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(255), nullable=True)
+    is_done = db.Column(db.Boolean(), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    user = db.relationship("User", back_populates="todos")
+
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "label": self.label,
+            "is_done": self.is_done
         }
