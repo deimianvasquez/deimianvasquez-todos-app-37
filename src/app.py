@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Todos
 #from models import Person
 
 app = Flask(__name__)
@@ -95,6 +95,95 @@ def get_one_users(username=None):
 
     return jsonify(user.serialize()), 200
 
+
+@app.route("/users", methods=["GET"])
+def get_all_users():
+    users = User.query.all()
+
+    print(users)
+
+    return jsonify({
+        "users": list(map(lambda item: item.serialize_users(), users))
+    })
+
+
+@app.route("/todos/<string:username>", methods=["POST"])
+def add_one_todo(username=None):
+    try:
+        body = request.json
+
+        user = User.query.filter_by(name=username).one_or_none()
+        todos = Todos()
+
+        if body.get("label") is None:
+            return jsonify("debes enviarme un label"), 400
+        
+        if body.get("is_done") is None:
+            return jsonify("debes enviarme un is_done"), 400
+
+        todos.label = body["label"]
+        todos.is_done = body.get("is_done")
+        todos.user_id = user.id
+        db.session.add(todos)
+
+        try:
+            db.session.commit()
+            return jsonify("tarea guardada exitosamente"), 201
+        except Exception as err:
+            db.session.rollback()
+            return jsonify(err.args), 500
+
+    except Exception as err:
+        return jsonify(err.args), 500
+
+
+@app.route("/todos/<int:theid>", methods=["PUT"])
+def update_todo(theid=None):
+
+    body = request.json
+    todo_edit = Todos.query.get(theid)
+
+
+    if body.get("label") is None:
+        return jsonify("debes enviarme un label"), 400
+
+    if body.get("is_done") is None:
+        return jsonify("debes enviarme un is_done"), 400
+    
+    if todo_edit is None:
+        return jsonify({"message":f"no existe una tarea con el id {theid}"}), 404
+    else:
+        try:
+            todo_edit.label = body["label"]
+            todo_edit.is_done = body["is_done"]
+            
+            db.session.commit()
+            return jsonify(todo_edit.serialize()), 201
+
+        except Exception as err:
+            return jsonify(err.args), 500
+
+
+
+
+    return jsonify("trabajando por usted"), 201
+
+
+@app.route("/todos/<int:theid>", methods=["DELETE"])
+def delete_todo(theid=None):
+    todo = Todos.query.get(theid)
+
+    if todo is None:
+        return jsonify({"message":f"todo f{theid} does't exists"}), 404
+    
+    else:
+        try:
+            db.session.delete(todo)
+            db.session.commit()
+            return jsonify([]), 204
+
+        except Exception as err:
+            return jsonify("Error, intentelo más tarde. Si el error persiste comuniquese con el administrador de la api")
 
 
 # this only runs if `$ python src/app.py` is executed

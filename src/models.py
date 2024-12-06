@@ -18,12 +18,35 @@ class User(db.Model):
 
     todos = db.relationship("Todos", back_populates="user", cascade="all, delete", uselist=True)
 
+    # sin ordenar
+    # def serialize(self):
+    #     return {
+    #         "id": self.id,
+    #         "name": self.name,
+    #         "todos": list(map(lambda item: item.serialize(), self.todos))
+    #     }
 
+
+    # ordenado
     def serialize(self):
         return {
             "id": self.id,
             "name": self.name,
-            "todos": list(map(lambda item: item.serialize(), self.todos))
+            # "todos": sorted(
+            #     list(map(lambda item: item.serialize(), self.todos)), key= lambda todo: todo["id"]
+            # )
+            "todos": sorted(
+                [item.serialize() for item in self.todos], key=lambda todo: todo["id"]
+            )
+        }
+    
+
+
+
+    def serialize_users(self):
+        return {
+            "id": self.id,
+            "name": self.name
         }
 
 
