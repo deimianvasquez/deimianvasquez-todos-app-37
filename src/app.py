@@ -40,28 +40,48 @@ def sitemap():
 # Endpoint que crea un user nuevo
 @app.route('/users/<string:username>', methods=['POST'])
 def add_new_user(username=None):
-    user = User()
-    user_true = user.query.filter_by(name=username).first()
+    # Logica en el endpoint
+    # user = User()
+    # user_true = user.query.filter_by(name=username).first()
 
-    if user_true is not None:
-        return jsonify({
-            "detail": "User already exists."
-        }), 400
+    # if user_true is not None:
+    #     return jsonify({
+    #         "detail": "User already exists."
+    #     }), 400
     
-    else:
-        user.name = username
-        user.gender = "MALE"
-        db.session.add(user)
+    # else:
+    #     user.name = username
+    #     user.gender = "MALE"
+    #     db.session.add(user)
 
-        try:
-            db.session.commit()
-            return jsonify({
-                "id": user.id,
-                "name": user.name
-            }), 201
+    #     try:
+    #         db.session.commit()
+    #         return jsonify({
+    #             "id": user.id,
+    #             "name": user.name
+    #         }), 201
         
-        except Exception as err:
-            return jsonify(err), 500
+    #     except Exception as err:
+    #         return jsonify(err), 500
+
+    # logica en el modelo
+    try:
+        user = User.create(username=username)
+        success, message = user 
+        print(user)
+        if success is None:
+            return jsonify(message), 400
+        elif success:
+            return jsonify({
+                "id": message.id,
+                "name": message.name
+            })
+        else:
+            return jsonify("error al intentar guardar el usuario"), 400
+
+
+    except Exception as err:
+        return jsonify("explote"), 500
 
 
 # Eliminamos un usuario 

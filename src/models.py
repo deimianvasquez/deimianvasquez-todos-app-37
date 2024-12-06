@@ -41,13 +41,31 @@ class User(db.Model):
         }
     
 
-
-
     def serialize_users(self):
         return {
             "id": self.id,
             "name": self.name
         }
+    
+
+    def create(username):
+        try:
+            user_exist = User.query.filter_by(name=username).one_or_none()
+
+            if user_exist is not None:
+                return None, "El usuario ya existe"
+
+            else:
+                user = User()
+                user.name = username
+                user.gender = "MALE"
+
+                db.session.add(user)
+                db.session.commit()
+                return True, user
+
+        except Exception as err:
+            return False, err.args
 
 
 class Todos(db.Model):
